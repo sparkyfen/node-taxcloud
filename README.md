@@ -10,5 +10,10 @@ Full Developer Guide
 [Here](https://taxcloud.net/developerguide.pdf)
 
 
+License
+======
+
+[MIT](http://brutalhonesty.mit-license.org/)
+
 This is currently under development...
 ==============================
