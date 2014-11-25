@@ -7,19 +7,15 @@ var parseString = require('xml2js').parseString;
 
 function _isAddress(addr) {
   if(validator.isNull(addr.address1)) {
-    console.log('Missing address 1');
     return false;
   }
   if(validator.isNull(addr.city)) {
-    console.log('Missing city');
     return false;
   }
   if(validator.isNull(addr.state) || !validator.isState(addr.state)) {
-    console.log('Missing state');
     return false;
   }
   if(validator.isNull(addr.zipcode) && !validator.isZipCode(addr.zipcode, 'US')) {
-    console.log('Missing zipcode');
     return false;
   }
   return true;
@@ -162,7 +158,7 @@ exports.lookup = function (customerId, cart, source, destination, callback) {
 };
 
 exports.getTics = function (callback) {
-  request('https://taxcloud.net/tic/?format=json', function (err, resp, body) {
+  request('https://taxcloud.net/tic/json/', function (err, resp, body) {
     if(err) {
       return callback(err);
     }
@@ -206,18 +202,19 @@ exports.getTicList = function (callback) {
 };
 
 exports.verifyAddress = function(addr, callback) {
+  var _self = this;
   if(!_isAddress(addr)) {
     return callback('Address object is invalid.');
   }
   var body = builder.create('soapenv:Envelope', {headless: true}).att('xmlns:soapenv', 'http://schemas.xmlsoap.org/soap/envelope/').att('xmlns:tax', 'http://taxcloud.net')
   .ele('soapenv:Header').up()
   .ele('soapenv:Body').ele('tax:VerifyAddress').ele('tax:uspsUserID', this.uspsUserId).up()
-  .ele('address1', addr.address1).up()
-  .ele('address2', addr.address2 ? addr.address2 : null).up()
+  .ele('tax:address1', addr.address1).up()
+  .ele('tax:address2', addr.address2 ? addr.address2 : null).up()
   .ele('tax:city', addr.city).up()
   .ele('tax:state', addr.state).up()
   .ele('tax:zip5', addr.zipcode.split('-')[0]).up()
-  .ele('tax:zip4', addr.zipcode.split('-')[1]);
+  .ele('tax:zip4', addr.zipcode.split('-')[1]).end({pretty: false});
   request.post({
     url: _self.url,
     body: body,
@@ -236,7 +233,18 @@ exports.verifyAddress = function(addr, callback) {
       if(error) {
         return callback(error);
       }
-      return callback(null, result);
+      var addressResult = result['soap:Envelope']['soap:Body'][0]['VerifyAddressResponse'][0]['VerifyAddressResult'][0];
+      if(addressResult['ErrNumber'][0] !== '0') {
+        return callback(addressResult['ErrDescription'][0]);
+      }
+      var newAddr = {
+        address1: addressResult['Address1'][0],
+        address2: addressResult['Address2'] ? addressResult['Address2'][0] : null,
+        city: addressResult['City'][0],
+        state: addressResult['State'][0],
+        zipcode: addressResult['Zip5'][0] + '-' + addressResult['Zip4'][0]
+      };
+      return callback(null, newAddr);
     });
   });
 };
