@@ -75,6 +75,9 @@ exports.ping = function(callback) {
 
 exports.lookup = function (customerId, cart, source, destination, callback) {
   var _self = this;
+  if(validator.isNull(customerId)) {
+    return callback('Customer id is missing.');
+  }
   if(typeof(customerId) !== 'string') {
     return callback('Customer id must be a string.');
   }
@@ -152,6 +155,108 @@ exports.lookup = function (customerId, cart, source, destination, callback) {
         return callback(null, {id: cartId, items: items});
       } else {
         return callback(lookupResult['Messages'][0]);
+      }
+    });
+  });
+};
+
+exports.authorize = function (customerId, cartId, orderId, dateAuthorized, callback) {
+  var _self = this;
+  if(validator.isNull(customerId)) {
+    return callback('Customer id is missing.');
+  }
+  if(typeof(customerId) !== 'string') {
+    return callback('Customer id must be a string.');
+  }
+  if(validator.isNull(cartId)) {
+    return callback('Cart id is missing.');
+  }
+  if(typeof(cartId) !== 'string') {
+    return callback('Cart id must be a string.');
+  }
+  if(validator.isNull(orderId)) {
+    return callback('Cart id is missing.');
+  }
+  if(typeof(orderId) !== 'string') {
+    return callback('Cart id must be a string.');
+  }
+  if(validator.isNull(dateAuthorized)) {
+    return callback('Date authorized is missing.');
+  }
+  if(typeof(dateAuthorized) !== 'string') {
+    return callback('Date authorized must be a string.');
+  }
+  var body = builder.create('soapenv:Envelope', {headless: true}).att('xmlns:soapenv', 'http://schemas.xmlsoap.org/soap/envelope/').att('xmlns:tax', 'http://taxcloud.net')
+  .ele('soapenv:Header').up()
+  .ele('soapenv:Body').ele('tax:Authorized').ele('tax:apiLoginID', this.apiLoginId).up()
+  .ele('tax:apiKey', this.apiKey).up()
+  .ele('tax:customerID', customerId).up()
+  .ele('tax:cartID', cartId).up()
+  .ele('tax:orderID', orderId).up()
+  .ele('tax:dateAuthorized', dateAuthorized).up().end({pretty: false});
+  request.post({
+    url: _self.url,
+    body: body,
+    headers: {
+      'SOAPAction': '"http://taxcloud.net/Authorized"',
+      'Content-Length': body.length
+    }
+  }, function (error, resp, xml) {
+    if(error) {
+      return callback(error);
+    }
+    if(resp.statusCode !== 200) {
+      return callback(xml);
+    }
+    parseString(xml, function (err, result) {
+      if(error) {
+        return callback(error);
+      }
+      var status = result['soap:Envelope']['soap:Body'][0]['AuthorizedResponse'][0]['AuthorizedResult'][0]['ResponseType'][0];
+      if(status === 'OK') {
+        return callback(null, true);
+      } else {
+        return callback(null, false);
+      }
+    });
+  });
+};
+
+exports.capture = function (orderId, callback) {
+  if(validator.isNull(orderId)) {
+    return callback('Cart id is missing.');
+  }
+  if(typeof(orderId) !== 'string') {
+    return callback('Cart id must be a string.');
+  }
+  var body = builder.create('soapenv:Envelope', {headless: true}).att('xmlns:soapenv', 'http://schemas.xmlsoap.org/soap/envelope/').att('xmlns:tax', 'http://taxcloud.net')
+  .ele('soapenv:Header').up()
+  .ele('soapenv:Body').ele('tax:Authorized').ele('tax:apiLoginID', this.apiLoginId).up()
+  .ele('tax:apiKey', this.apiKey).up()
+  .ele('tax:orderID', orderId).up()
+  request.post({
+    url: _self.url,
+    body: body,
+    headers: {
+      'SOAPAction': '"http://taxcloud.net/Captured"',
+      'Content-Length': body.length
+    }
+  }, function (error, resp, xml) {
+    if(error) {
+      return callback(error);
+    }
+    if(resp.statusCode !== 200) {
+      return callback(xml);
+    }
+    parseString(xml, function (err, result) {
+      if(error) {
+        return callback(error);
+      }
+      var status = result['soap:Envelope']['soap:Body'][0]['CapturedResponse'][0]['CapturedResult'][0]['ResponseType'][0];
+      if(status === 'OK') {
+        return callback(null, true);
+      } else {
+        return callback(null, false);
       }
     });
   });

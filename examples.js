@@ -8,11 +8,12 @@ var uspsUserID = 'NNNXXXXNNNN';
 taxCloud.initialize(apiLoginId, apiKey, uspsUserID);
 
 // Ping Taxcloud to verify account information.
-taxCloud.ping(function (error, resp) {
+taxCloud.ping(function (error, result) {
   if(error){
     console.log(error);
   }
-  console.log(resp);
+  // Should be true or false
+  console.log(result);
 });
 
 // Retreive tax information between two locations.
@@ -46,6 +47,24 @@ taxCloud.lookup(uuid.v4(), {
     return console.log(error);
   }
   console.log(data);
+});
+
+// Authorize an order
+taxCloud.authorize(uuid.v4(), uuid.v4(), uuid.v4(), '2014-11-26T13:39:15', function (error, result) {
+  if(error) {
+    return console.log(error);
+  }
+  // Should be true or false
+  console.log(result);
+});
+
+// Complete an transaction.
+taxCloud.capture(uuid.v4(), function (error, result) {
+  if(error) {
+    return console.log(error);
+  }
+  // Should be true or false
+  console.log(result);
 });
 
 // Verify valid addresses via USPS.
