@@ -22,6 +22,9 @@ function _isAddress(addr) {
 }
 
 function _addressBuilder(address, type) {
+  if(typeof(address.zipcode) !== 'string') {
+    address.zipcode = address.zipcode.toString();
+  }
   var addressBuilder = builder.create('tax:' + type)
   .ele('tax:Address1', address.address1).up()
   .ele('tax:Address2', address.address2 ? address.address2 : null).up()
@@ -223,6 +226,7 @@ exports.authorize = function (customerId, cartId, orderId, dateAuthorized, callb
 };
 
 exports.capture = function (orderId, callback) {
+  var _self = this;
   if(validator.isNull(orderId)) {
     return callback('Cart id is missing.');
   }
