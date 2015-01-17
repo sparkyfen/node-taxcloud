@@ -315,6 +315,9 @@ exports.verifyAddress = function(addr, callback) {
   if(!_isAddress(addr)) {
     return callback('Address object is invalid.');
   }
+  if(typeof(address.zipcode) !== 'string') {
+    addr.zipcode = addr.zipcode.toString();
+  }
   var body = builder.create('soapenv:Envelope', {headless: true}).att('xmlns:soapenv', 'http://schemas.xmlsoap.org/soap/envelope/').att('xmlns:tax', 'http://taxcloud.net')
   .ele('soapenv:Header').up()
   .ele('soapenv:Body').ele('tax:VerifyAddress').ele('tax:uspsUserID', this.uspsUserId).up()
