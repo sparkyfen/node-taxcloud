@@ -67,6 +67,29 @@ taxCloud.capture(uuid.v4(), function (error, result) {
   console.log(result);
 });
 
+// Authorize and complete a transcation in one request.
+taxCloud.authorizeWithCapture(uuid.v4(), uuid.v4(), uuid.v4(), '2014-11-26T13:39:15', '2014-11-26T13:39:17', function (error, result) {
+  if(error) {
+    return console.log(error);
+  }
+  // Should be true or false
+  console.log(result);
+});
+
+// Return part or all items in an order.
+taxCloud.returned(uuid.v4(), [{
+  id: uuid.v4(),
+  tic: '00000',
+  price: 18.00,
+  quantity: 1
+}], '2014-11-26T13:40:00', function (error, result) {
+  if(error) {
+    return console.log(error);
+  }
+  // Should be true or false
+  console.log(result);
+});
+
 // Verify valid addresses via USPS.
 taxCloud.verifyAddress({
   address1: 'NNN N GALVIN PKWY',

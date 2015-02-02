@@ -104,12 +104,21 @@ exports.lookup = function (customerId, cart, source, destination, callback) {
     return callback('Destination address object is invalid.');
   }
   destination.state = destination.state.toUpperCase();
+  if(!(cart.items instanceof Array)) {
+    return callback('Cart items must be an array.');
+  }
+  if(cart.items.length < 1) {
+    return callback('Cart items list must contain at least 1 item.');
+  }
   if(cart.items.length > 100) {
-    return callbackl('The maximum items in a cart is 100.');
+    return callback('The maximum items in a cart is 100.');
   }
   var cartItems = builder.create('tax:cartItems');
   for (var i = 0; i < cart.items.length; i++) {
     var item = cart.items[i];
+    if(typeof(item.tic) !== 'string') {
+      return callback('An item tic value must be a string.');
+    }
     if(!validator.isTic(item.tic)) {
       return callback('An item tic value is invalid.');
     }
@@ -228,10 +237,10 @@ exports.authorize = function (customerId, cartId, orderId, dateAuthorized, callb
 exports.capture = function (orderId, callback) {
   var _self = this;
   if(validator.isNull(orderId)) {
-    return callback('Cart id is missing.');
+    return callback('Order id is missing.');
   }
   if(typeof(orderId) !== 'string') {
-    return callback('Cart id must be a string.');
+    return callback('Order id must be a string.');
   }
   var body = builder.create('soapenv:Envelope', {headless: true}).att('xmlns:soapenv', 'http://schemas.xmlsoap.org/soap/envelope/').att('xmlns:tax', 'http://taxcloud.net')
   .ele('soapenv:Header').up()
@@ -257,6 +266,151 @@ exports.capture = function (orderId, callback) {
         return callback(error);
       }
       var status = result['soap:Envelope']['soap:Body'][0]['CapturedResponse'][0]['CapturedResult'][0]['ResponseType'][0];
+      if(status === 'OK') {
+        return callback(null, true);
+      } else {
+        return callback(null, false);
+      }
+    });
+  });
+};
+
+exports.authorizeWithCapture = function (customerId, cartId, orderId, dateAuthorized, dateCaptured, callback) {
+  var _self = this;
+  if(validator.isNull(customerId)) {
+    return callback('Customer id is missing.');
+  }
+  if(typeof(customerId) !== 'string') {
+    return callback('Customer id must be a string.');
+  }
+  if(validator.isNull(cartId)) {
+    return callback('Cart id is missing.');
+  }
+  if(typeof(cartId) !== 'string') {
+    return callback('Cart id must be a string.');
+  }
+  if(validator.isNull(orderId)) {
+    return callback('Order id is missing.');
+  }
+  if(typeof(orderId) !== 'string') {
+    return callback('Order id must be a string.');
+  }
+  if(validator.isNull(dateAuthorized)) {
+    return callback('Date authorized is missing.');
+  }
+  if(typeof(dateAuthorized) !== 'string') {
+    return callback('Date authorized must be a string.');
+  }
+  if(validator.isNull(dateCaptured)) {
+    return callback('Date captured is missing.');
+  }
+  if(typeof(dateCaptured) !== 'string') {
+    return callback('Date captured must be a string.');
+  }
+  var body = builder.create('soapenv:Envelope', {headless: true}).att('xmlns:soapenv', 'http://schemas.xmlsoap.org/soap/envelope/').att('xmlns:tax', 'http://taxcloud.net')
+  .ele('soapenv:Header').up()
+  .ele('soapenv:Body').ele('tax:AuthorizedWithCaptured').ele('tax:apiLoginID', this.apiLoginId).up()
+  .ele('tax:apiKey', this.apiKey).up()
+  .ele('tax:customerID', customerId).up()
+  .ele('tax:cartID', cartId).up()
+  .ele('tax:orderID', orderId).up()
+  .ele('tax:dateAuthorized', dateAuthorized)
+  .ele('tax:dateCaptured', dateCaptured).up().end({pretty: false});
+  request.post({
+    url: _self.url,
+    body: body,
+    headers: {
+      'SOAPAction': '"http://taxcloud.net/AuthorizedWithCaptured"',
+      'Content-Length': body.length
+    }
+  }, function (error, resp, xml) {
+    if(error) {
+      return callback(error);
+    }
+    if(resp.statusCode !== 200) {
+      return callback(xml);
+    }
+    parseString(xml, function (err, result) {
+      if(error) {
+        return callback(error);
+      }
+      var status = result['soap:Envelope']['soap:Body'][0]['AuthorizedWithCaptureResponse'][0]['AuthorizedWithCaptureResult'][0]['ResponseType'][0];
+      if(status === 'OK') {
+        return callback(null, true);
+      } else {
+        return callback(null, false);
+      }
+    });
+  });
+};
+
+exports.returned = function (orderId, cartItems, returnedDate, callback) {
+  var _self = this;
+  if(validator.isNull(orderId)) {
+    return callback('Order id is missing.');
+  }
+  if(typeof(orderId) !== 'string') {
+    return callback('Order id must be a string.');
+  }
+  if(validator.isNull(returnedDate)) {
+    return callback('Returned date is missing.');
+  }
+  if(typeof(returnedDate) !== 'string') {
+    return callback('Returned date must be a string.');
+  }
+  if(!(cartItems instanceof Array)) {
+    return callback('Cart items must be an array.');
+  }
+  if(cartItems.length < 1) {
+    return callback('Cart items list must contain at least 1 item.');
+  }
+  if(cartItems.length > 100) {
+    return callback('The maximum items in a cart is 100.');
+  }
+  var cartItemsDoc = builder.create('tax:cartItems');
+  for (var i = 0; i < cartItems.length; i++) {
+    var item = cartItems[i];
+    if(typeof(item.tic) !== 'string') {
+      return callback('An item tic value must be a string.');
+    }
+    if(!validator.isTic(item.tic)) {
+      return callback('An item tic value is invalid.');
+    }
+    if(!validator.isFloat(item.price)) {
+      return callback('An item price value is not a float.');
+    }
+    item.price = validator.toFloat(item.price);
+    if(!validator.isInt(item.quantity)) {
+      return callback('An item quantity value is not an integer.');
+    }
+    item.quantity = validator.toInt(item.quantity);
+    cartItemsDoc.ele('tax:CartItem').ele('tax:Index', i).up().ele('tax:ItemID', item.id).up().ele('tax:TIC', item.tic).up().ele('tax:Price', item.price).up().ele('tax:Qty', item.quantity);
+  }
+  var body = builder.create('soapenv:Envelope', {headless: true}).att('xmlns:soapenv', 'http://schemas.xmlsoap.org/soap/envelope/').att('xmlns:tax', 'http://taxcloud.net')
+  .ele('soapenv:Header').up()
+  .ele('soapenv:Body').ele('tax:Returned').ele('tax:apiLoginID', this.apiLoginId).up()
+  .ele('tax:apiKey', this.apiKey).up()
+  .ele('tax:orderID', orderId).up()
+  .ele('tax:returnedDate', returnedDate).up().importXMLBuilder(cartItemsDoc.doc()).end({pretty: false});
+  request.post({
+    url: _self.url,
+    body: body,
+    headers: {
+      'SOAPAction': '"http://taxcloud.net/Returned"',
+      'Content-Length': body.length
+    }
+  }, function (error, resp, xml) {
+    if(error) {
+      return callback(error);
+    }
+    if(resp.statusCode !== 200) {
+      return callback(xml);
+    }
+    parseString(xml, function (err, result) {
+      if(error) {
+        return callback(error);
+      }
+      var status = result['soap:Envelope']['soap:Body'][0]['ReturnedResponse'][0]['ReturnedResult'][0]['ResponseType'][0];
       if(status === 'OK') {
         return callback(null, true);
       } else {
