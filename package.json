@@ -1,6 +1,6 @@
 {
   "name": "node-taxcloud",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "description": "Node Wrapper for TaxCloud SOAP API",
   "main": "index.js",
   "scripts": {

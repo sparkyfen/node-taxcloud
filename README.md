@@ -15,5 +15,6 @@ License
 
 [MIT](http://brutalhonesty.mit-license.org/)
 
-This is currently under development...
-==============================
+Examples
+========
+[Examples](exaples.js)
