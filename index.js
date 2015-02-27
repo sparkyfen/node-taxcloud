@@ -314,7 +314,7 @@ exports.authorizeWithCapture = function (customerId, cartId, orderId, dateAuthor
   .ele('tax:customerID', customerId).up()
   .ele('tax:cartID', cartId).up()
   .ele('tax:orderID', orderId).up()
-  .ele('tax:dateAuthorized', dateAuthorized)
+  .ele('tax:dateAuthorized', dateAuthorized).up()
   .ele('tax:dateCaptured', dateCaptured).up().end({pretty: false});
   request.post({
     url: _self.url,
