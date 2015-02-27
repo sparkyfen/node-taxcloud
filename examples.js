@@ -3,6 +3,11 @@ var uuid = require('node-uuid');
 var apiKey = 'NXNXNXNXN-XNXN-XNXN-XNXN-XNXNXNXNXNXN';
 var apiLoginId = 'XXXXXXXX';
 var uspsUserID = 'NNNXXXXNNNN';
+var customerId = uuid.v4();
+var cartId = uuid.v4();
+var productId1 = uuid.v4();
+var productId2 = uuid.v4();
+var orderId = uuid.v4();
 
 // Initialize taxcloud object with keys and ids.
 taxCloud.initialize(apiLoginId, apiKey, uspsUserID);
@@ -17,15 +22,15 @@ taxCloud.ping(function (error, result) {
 });
 
 // Retreive tax information between two locations.
-taxCloud.lookup(uuid.v4(), {
-  id: uuid.v4(),
+taxCloud.lookup(customerId, {
+  id: cartId,
   items: [{
-    id: uuid.v4(),
+    id: productId1,
     tic: '00000',
     price: 18.00,
     quantity: 1
   }, {
-    id: uuid.v4(),
+    id: productId2,
     tic: '00000',
     price: 26.00,
     quantity: 1
@@ -50,7 +55,7 @@ taxCloud.lookup(uuid.v4(), {
 });
 
 // Authorize an order
-taxCloud.authorize(uuid.v4(), uuid.v4(), uuid.v4(), '2014-11-26T13:39:15', function (error, result) {
+taxCloud.authorize(customerId, cartId, orderId, '2014-11-26T13:39:15', function (error, result) {
   if(error) {
     return console.log(error);
   }
@@ -59,7 +64,7 @@ taxCloud.authorize(uuid.v4(), uuid.v4(), uuid.v4(), '2014-11-26T13:39:15', funct
 });
 
 // Complete an transaction.
-taxCloud.capture(uuid.v4(), function (error, result) {
+taxCloud.capture(orderId, function (error, result) {
   if(error) {
     return console.log(error);
   }
@@ -68,7 +73,7 @@ taxCloud.capture(uuid.v4(), function (error, result) {
 });
 
 // Authorize and complete a transcation in one request.
-taxCloud.authorizeWithCapture(uuid.v4(), uuid.v4(), uuid.v4(), '2014-11-26T13:39:15', '2014-11-26T13:39:17', function (error, result) {
+taxCloud.authorizeWithCapture(customerId, cartId, orderId, '2014-11-26T13:39:15', '2014-11-26T13:39:17', function (error, result) {
   if(error) {
     return console.log(error);
   }
@@ -77,8 +82,8 @@ taxCloud.authorizeWithCapture(uuid.v4(), uuid.v4(), uuid.v4(), '2014-11-26T13:39
 });
 
 // Return part or all items in an order.
-taxCloud.returned(uuid.v4(), [{
-  id: uuid.v4(),
+taxCloud.returned(orderId, [{
+  id: productId1,
   tic: '00000',
   price: 18.00,
   quantity: 1
