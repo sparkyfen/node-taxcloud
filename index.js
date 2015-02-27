@@ -309,7 +309,7 @@ exports.authorizeWithCapture = function (customerId, cartId, orderId, dateAuthor
   }
   var body = builder.create('soapenv:Envelope', {headless: true}).att('xmlns:soapenv', 'http://schemas.xmlsoap.org/soap/envelope/').att('xmlns:tax', 'http://taxcloud.net')
   .ele('soapenv:Header').up()
-  .ele('soapenv:Body').ele('tax:AuthorizedWithCaptured').ele('tax:apiLoginID', this.apiLoginId).up()
+  .ele('soapenv:Body').ele('tax:AuthorizedWithCapture').ele('tax:apiLoginID', this.apiLoginId).up()
   .ele('tax:apiKey', this.apiKey).up()
   .ele('tax:customerID', customerId).up()
   .ele('tax:cartID', cartId).up()
@@ -320,7 +320,7 @@ exports.authorizeWithCapture = function (customerId, cartId, orderId, dateAuthor
     url: _self.url,
     body: body,
     headers: {
-      'SOAPAction': '"http://taxcloud.net/AuthorizedWithCaptured"',
+      'SOAPAction': '"http://taxcloud.net/AuthorizedWithCapture"',
       'Content-Length': body.length
     }
   }, function (error, resp, xml) {
