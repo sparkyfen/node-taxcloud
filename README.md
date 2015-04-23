@@ -17,4 +17,4 @@ License
 
 Examples
 ========
-[Examples](exaples.js)
+[Examples](examples.js)
